@@ -12,10 +12,9 @@ pub fn do_fizzbuzz(n: Int) -> String {
 }
 
 pub fn main() {
-  let fizzbuzz =
-    list.range(1, 101)
-    |> list.map(do_fizzbuzz)
-  io.debug(fizzbuzz)
+  list.range(1, 101)
+  |> list.map(do_fizzbuzz)
+  |> io.debug
 }
 // Side note: the following one will be compile error.
 // Gleam doesn't support wider case of guards (especially including arithmetic operations)?
