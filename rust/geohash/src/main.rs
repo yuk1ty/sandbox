@@ -32,6 +32,9 @@ fn encode_geohash(lat: f32, lon: f32, bits: i32) -> i64 {
 }
 
 fn main() {
-    let geohash = encode_geohash(35.658034, 139.701636, 24);
-    println!("{}", geohash);
+    let shibuya = encode_geohash(35.658034, 139.701636, 15);
+    println!("{}", shibuya);
+
+    let shinjuku = encode_geohash(35.689607, 139.700571, 15);
+    println!("{}", shinjuku);
 }
