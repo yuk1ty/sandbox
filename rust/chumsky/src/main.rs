@@ -29,7 +29,8 @@ enum Expr {
 }
 
 fn parser() -> impl Parser<char, Expr, Error = Simple<char>> {
-    recursive(|expr| {
+    let ident = text::ident().padded();
+    let expr = recursive(|expr| {
         let int = text::int(10)
             .map(|s: String| Expr::Num(s.parse().unwrap()))
             .padded();
@@ -64,17 +65,48 @@ fn parser() -> impl Parser<char, Expr, Error = Simple<char>> {
 
         sum
     })
-    .then_ignore(end())
+    .then_ignore(end());
+
+    let decl = recursive(|decl| {
+        let r#let = text::keyword("let")
+            .ignore_then(ident)
+            .then_ignore(just('='))
+            .then(expr.clone())
+            .then_ignore(just(';'))
+            .then(decl)
+            .map(|((name, rhs), then)| Expr::Let {
+                name,
+                rhs: Box::new(rhs),
+                then: Box::new(then),
+            });
+
+        r#let.or(expr).padded()
+    });
+    decl.then_ignore(end())
 }
 
-fn eval(expr: &Expr) -> Result<f64, String> {
+fn eval<'a>(expr: &'a Expr, vars: &mut Vec<(&'a String, f64)>) -> Result<f64, String> {
     match expr {
         Expr::Num(x) => Ok(*x),
-        Expr::Neg(a) => Ok(-eval(a)?),
-        Expr::Add(a, b) => Ok(eval(a)? + eval(b)?),
-        Expr::Sub(a, b) => Ok(eval(a)? - eval(b)?),
-        Expr::Mul(a, b) => Ok(eval(a)? * eval(b)?),
-        Expr::Div(a, b) => Ok(eval(a)? / eval(b)?),
+        Expr::Neg(a) => Ok(-eval(a, vars)?),
+        Expr::Add(a, b) => Ok(eval(a, vars)? + eval(b, vars)?),
+        Expr::Sub(a, b) => Ok(eval(a, vars)? - eval(b, vars)?),
+        Expr::Mul(a, b) => Ok(eval(a, vars)? * eval(b, vars)?),
+        Expr::Div(a, b) => Ok(eval(a, vars)? / eval(b, vars)?),
+        Expr::Var(name) => {
+            if let Some((_, val)) = vars.iter().rev().find(|(var, _)| *var == name) {
+                Ok(*val)
+            } else {
+                Err(format!("Cannot find variable `{}` in scope", name))
+            }
+        }
+        Expr::Let { name, rhs, then } => {
+            let rhs = eval(rhs, vars)?;
+            vars.push((name, rhs));
+            let output = eval(then, vars);
+            vars.pop();
+            output
+        }
         _ => todo!(),
     }
 }
@@ -83,7 +115,7 @@ fn main() {
     let src = read_to_string(args().nth(1).unwrap()).unwrap();
 
     match parser().parse(src) {
-        Ok(ast) => match eval(&ast) {
+        Ok(ast) => match eval(&ast, &mut Vec::new()) {
             Ok(output) => println!("{}", output),
             Err(eval_err) => println!("Evaluation error: {}", eval_err),
         },
@@ -115,5 +147,48 @@ fn parse_negate() {
     assert_eq!(
         result,
         Ok(Expr::Neg(Box::new(Expr::Neg(Box::new(Expr::Num(42.0))))))
+    );
+}
+
+#[test]
+fn parse_binary() {
+    let text = "1 + 2";
+    let result = parser().parse(text);
+    assert_eq!(
+        result,
+        Ok(Expr::Add(
+            Box::new(Expr::Num(1.0)),
+            Box::new(Expr::Num(2.0))
+        ))
+    );
+
+    let text = "1 - 2";
+    let result = parser().parse(text);
+    assert_eq!(
+        result,
+        Ok(Expr::Sub(
+            Box::new(Expr::Num(1.0)),
+            Box::new(Expr::Num(2.0))
+        ))
+    );
+
+    let text = "1 * 2";
+    let result = parser().parse(text);
+    assert_eq!(
+        result,
+        Ok(Expr::Mul(
+            Box::new(Expr::Num(1.0)),
+            Box::new(Expr::Num(2.0))
+        ))
+    );
+
+    let text = "1 / 2";
+    let result = parser().parse(text);
+    assert_eq!(
+        result,
+        Ok(Expr::Div(
+            Box::new(Expr::Num(1.0)),
+            Box::new(Expr::Num(2.0))
+        ))
     );
 }
