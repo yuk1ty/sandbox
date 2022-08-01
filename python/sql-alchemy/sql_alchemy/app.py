@@ -28,3 +28,9 @@ conn.execute(
         {"name": "Priya", "lastname": "Rajhans"},
     ],
 )
+
+s = students.select().where(students.c.id > 2)
+result = conn.execute(s)
+
+for row in result:
+    print(row)
