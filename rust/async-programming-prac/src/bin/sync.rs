@@ -14,14 +14,8 @@ fn handler(mut stream: TcpStream) -> std::io::Result<()> {
 
 fn start() -> std::io::Result<()> {
     let listener = TcpListener::bind("0.0.0.0:9999")?;
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                let handler = thread::spawn(move || handler(stream));
-                handler.join().unwrap()?;
-            }
-            Err(err) => eprintln!("{:?}", err),
-        }
+    while let Ok((stream, _)) = listener.accept() {
+        thread::spawn(|| handler(stream));
     }
     Ok(())
 }

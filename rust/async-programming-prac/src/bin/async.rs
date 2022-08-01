@@ -2,6 +2,7 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     runtime::Runtime,
+    task,
 };
 
 async fn handler(mut stream: TcpStream) -> std::io::Result<()> {
@@ -15,9 +16,8 @@ async fn handler(mut stream: TcpStream) -> std::io::Result<()> {
 async fn start() -> std::io::Result<()> {
     let listener = TcpListener::bind("0.0.0.0:9999").await?;
     loop {
-        match listener.accept().await {
-            Ok((stream, _)) => handler(stream).await?,
-            Err(err) => eprintln!("{:?}", err),
+        if let Ok((stream, _)) = listener.accept().await {
+            task::spawn(handler(stream));
         }
     }
 }
