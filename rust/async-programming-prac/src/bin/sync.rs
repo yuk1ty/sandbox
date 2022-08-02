@@ -7,7 +7,14 @@ use std::{
 fn handler(mut stream: TcpStream) -> std::io::Result<()> {
     let mut buffer = [0; 1024];
     stream.read(&mut buffer)?;
-    let response = "HTTP/1.1 200 OK\r\n\r\n";
+
+    let get = b"GET / HTTP/1.1\r\n\r\n";
+
+    let response = if buffer.starts_with(get) {
+        "HTTP/1.1 200 OK\r\n\r\n"
+    } else {
+        "HTTP/1.1 404 NotFound\r\n\r\n"
+    };
     stream.write_all(response.as_bytes())?;
     stream.flush()
 }
