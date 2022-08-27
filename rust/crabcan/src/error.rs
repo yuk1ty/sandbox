@@ -15,7 +15,10 @@ pub fn exit_with_retcode(res: Result<(), Errcode>) {
 }
 
 #[derive(Debug)]
-pub enum Errcode {}
+pub enum Errcode {
+    NotSupported(u8),
+    ContainerError(u8),
+}
 
 impl Errcode {
     pub fn get_retcode(&self) -> i32 {
