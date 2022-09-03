@@ -4,6 +4,5 @@ CREATE TABLE IF NOT EXISTS books (
     author varchar(256) not null,
     publisher varchar(256) not null,
     isbn varchar(17) not null,
-    rating integer not null,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;;
