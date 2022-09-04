@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS books (
     author varchar(256) not null,
     publisher varchar(256) not null,
     isbn varchar(17) not null,
+    comment varchar(4096) not null,
     created_at datetime not null,
     updated_at datetime not null,
     PRIMARY KEY (id)

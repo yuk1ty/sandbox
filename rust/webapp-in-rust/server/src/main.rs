@@ -1,9 +1,10 @@
 use std::{env, net::SocketAddr, sync::Arc};
 
 use axum::{
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, patch, post},
     Extension, Json, Router,
 };
 use chrono::NaiveDateTime;
@@ -17,6 +18,7 @@ struct Book {
     author: String,
     publisher: String,
     isbn: String,
+    comment: String,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }
@@ -30,6 +32,12 @@ struct CreateNewBook {
     author: String,
     publisher: String,
     isbn: String,
+    comment: String,
+}
+
+#[derive(Deserialize)]
+struct UpdateComment {
+    comment: String,
 }
 
 type MySqlConPool = Arc<Pool<MySql>>;
@@ -63,11 +71,12 @@ async fn create_item(
     }
 
     let rows_affected = sqlx::query!(
-        r#"insert into books (title, author, publisher, isbn, created_at, updated_at) values (?, ?, ?, ?, now(), now())"#,
+        r#"insert into books (title, author, publisher, isbn, comment, created_at, updated_at) values (?, ?, ?, ?, ?, now(), now())"#,
         req.title,
         req.author,
         req.publisher,
-        req.isbn
+        req.isbn,
+        req.comment,
     )
     .execute(&mut conn.unwrap())
     .await
@@ -88,12 +97,47 @@ async fn create_item(
     }
 }
 
+async fn update_comment(
+    Path(id): Path<i64>,
+    Json(req): Json<UpdateComment>,
+    Extension(db): Extension<MySqlConPool>,
+) -> anyhow::Result<impl IntoResponse, StatusCode> {
+    let conn = db.acquire().await;
+    if conn.is_err() {
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    let rows_affected = sqlx::query!(
+        r#"update books set comment = ?, updated_at = now() where id = ?"#,
+        req.comment,
+        id
+    )
+    .execute(&mut conn.unwrap())
+    .await
+    .map(|result| result.rows_affected());
+
+    match rows_affected {
+        Ok(count) => {
+            if count > 0 {
+                Ok(StatusCode::OK)
+            } else {
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
+        Err(err) => {
+            eprintln!("{:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let pool = MySqlPool::connect(&env::var("DATABASE_URL")?).await?;
     let books_router = Router::new()
         .route("/", get(book_list))
-        .route("/", post(create_item));
+        .route("/", post(create_item))
+        .route("/:id/comment", patch(update_comment));
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/books", books_router)
