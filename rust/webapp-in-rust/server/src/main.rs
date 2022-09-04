@@ -166,8 +166,8 @@ async fn main() -> anyhow::Result<()> {
     let books_router = Router::new()
         .route("/", get(book_list))
         .route("/", post(create_item))
-        .route("/:id", delete(delete_item))
-        .route("/:id/comment", patch(update_comment));
+        .route("/:id/comment", patch(update_comment))
+        .route("/:id", delete(delete_item));
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/books", books_router)
