@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.63"
 axum = "0.5.15"
-chrono = "0.4.22"
+chrono = { version = "0.4.22", features = ["serde"] }
 serde = { version = "1.0.144", features = ["derive"] }
 sqlx = { version = "0.6.1", features = ["runtime-tokio-rustls", "mysql", "chrono"] }
 tokio = { version = "1.21.0", features = ["rt", "rt-multi-thread", "macros"] }
