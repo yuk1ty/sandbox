@@ -4,7 +4,7 @@ use axum::{
     extract::Path,
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, patch, post},
+    routing::{delete, get, patch, post},
     Extension, Json, Router,
 };
 use chrono::NaiveDateTime;
@@ -121,7 +121,36 @@ async fn update_comment(
             if count > 0 {
                 Ok(StatusCode::OK)
             } else {
-                Err(StatusCode::INTERNAL_SERVER_ERROR)
+                Err(StatusCode::NOT_FOUND)
+            }
+        }
+        Err(err) => {
+            eprintln!("{:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn delete_item(
+    Path(id): Path<i64>,
+    Extension(db): Extension<MySqlConPool>,
+) -> anyhow::Result<impl IntoResponse, StatusCode> {
+    let conn = db.acquire().await;
+    if conn.is_err() {
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    let rows_affected = sqlx::query!("delete from books where id = ?", id)
+        .execute(&mut conn.unwrap())
+        .await
+        .map(|result| result.rows_affected());
+
+    match rows_affected {
+        Ok(count) => {
+            if count > 0 {
+                Ok(StatusCode::OK)
+            } else {
+                Err(StatusCode::NOT_FOUND)
             }
         }
         Err(err) => {
@@ -137,6 +166,7 @@ async fn main() -> anyhow::Result<()> {
     let books_router = Router::new()
         .route("/", get(book_list))
         .route("/", post(create_item))
+        .route("/:id", delete(delete_item))
         .route("/:id/comment", patch(update_comment));
     let app = Router::new()
         .route("/health", get(health_check))
