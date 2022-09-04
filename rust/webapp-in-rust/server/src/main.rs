@@ -119,7 +119,7 @@ async fn update_comment(
     match rows_affected {
         Ok(count) => {
             if count > 0 {
-                Ok(StatusCode::OK)
+                Ok(StatusCode::NO_CONTENT)
             } else {
                 Err(StatusCode::NOT_FOUND)
             }
@@ -148,7 +148,7 @@ async fn delete_item(
     match rows_affected {
         Ok(count) => {
             if count > 0 {
-                Ok(StatusCode::OK)
+                Ok(StatusCode::NO_CONTENT)
             } else {
                 Err(StatusCode::NOT_FOUND)
             }
