@@ -114,11 +114,20 @@ async fn update_comment(
     )
     .execute(&mut conn.unwrap())
     .await
+    .unwrap();
+
+    let rows_affected = sqlx::query!(
+        r#"update books set comment = ?, updated_at = now() where id = ?"#,
+        req.comment,
+        id
+    )
+    .execute(&mut conn.unwrap())
+    .await
     .map(|result| result.rows_affected());
 
     match rows_affected {
         Ok(count) => {
-            if count > 0 {
+            if count == 1 {
                 Ok(StatusCode::NO_CONTENT)
             } else {
                 Err(StatusCode::NOT_FOUND)
