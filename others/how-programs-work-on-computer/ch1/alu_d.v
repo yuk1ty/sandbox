@@ -1,3 +1,5 @@
+// "`define" statement can only replace strings with another one.
+// For example, `ADD is replaced with 5'b00000.
 `define ADD  5'b00000
 `define SUB  5'b00001
 `define MUL  5'b00010
