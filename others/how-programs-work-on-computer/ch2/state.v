@@ -10,6 +10,6 @@ module state(clk, rst_n, run, halt, q);
       `IDLE: if (run) q <= `FETCH;
       `FETCH: q <= `EXEC;
       `EXEC: if (halt) q <= `IDLE; else q <= `FETCH;
-      default: q <= 2'bXXl
+      default: q <= 2'bXX;
     endcase
 endmodule
