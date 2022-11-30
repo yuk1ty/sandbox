@@ -1,8 +1,16 @@
-[package]
-name = "cargo-common-workspace"
+[workspace]
+members = [
+    "app-domain",
+    "app-infra",
+    "app-interface",
+    "app-usecase"
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.65.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace.dependencies]
+anyhow = "1.0.66"
+tokio = { version = "1", features = ["full"] }

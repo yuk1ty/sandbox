@@ -1,0 +1,9 @@
+[package]
+name = "app-interface"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum = "0.6.1"
+tokio.workspace = true
