@@ -1,38 +1,37 @@
+// trait StreamingIterator {
+//     type Item<'a>
+//     where
+//         Self: 'a;
+//     fn next(&mut self) -> Option<Self::Item<'_>>;
+// }
+
+// struct VecWrapper<T> {
+//     inner: Vec<T>,
+//     cur: usize,
+// }
+
+// impl<T> StreamingIterator for VecWrapper<T> {
+//     type Item<'a> = &'a mut T where Self: 'a;
+//     fn next(&mut self) -> Option<Self::Item<'_>> {
+//         self.inner.get_mut(self.cur).map_or(None, |item| {
+//             self.cur += 1;
+//             Some(item)
+//         })
+//     }
+// }
+
+use std::marker::PhantomData;
+
+// NG
 trait StreamingIterator {
-    type Item<'a>
-    where
-        Self: 'a;
-    fn next(&mut self) -> Option<Self::Item<'_>>;
+    type Item;
+    fn next(&mut self) -> Option<&mut Self::Item>;
 }
 
 struct VecWrapper<T> {
     inner: Vec<T>,
     cur: usize,
 }
-
-impl<T> StreamingIterator for VecWrapper<T> {
-    type Item<'a> = &'a mut T where Self: 'a;
-    fn next(&mut self) -> Option<Self::Item<'_>> {
-        self.inner.get_mut(self.cur).map_or(None, |item| {
-            self.cur += 1;
-            Some(item)
-        })
-    }
-}
-
-// use std::marker::PhantomData;
-
-// NG
-// trait StreamingIterator {
-//     type Item;
-//     fn next(&mut self) -> Option<Self::Item>;
-// }
-
-// struct VecWrapper<'a, T> {
-//     inner: Vec<T>,
-//     cur: usize,
-//     _marker: PhantomData<&'a T>,
-// }
 
 // NG
 // error: lifetime may not live long enough
@@ -48,14 +47,20 @@ impl<T> StreamingIterator for VecWrapper<T> {
 // 38 | |             Some(item)
 // 39 | |         })
 //    | |__________^ associated function was supposed to return data with lifetime `'a` but it is returning data with lifetime `'1`
-// impl<'a, T> StreamingIterator for VecWrapper<'a, T> {
-//     type Item = &'a mut T;
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.inner.get_mut(self.cur).map_or(None, |item| {
-//             self.cur += 1;
-//             Some(item)
-//         })
-//     }
-// }
+impl<T> StreamingIterator for VecWrapper<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<&mut Self::Item> {
+        self.inner.get_mut(self.cur).map_or(None, |item| {
+            self.cur += 1;
+            Some(item)
+        })
+    }
+}
 
-fn main() {}
+fn main() {
+    let mut vec = VecWrapper {
+        inner: vec![1, 2, 3],
+        cur: 0,
+    };
+    let a = vec.next();
+}
