@@ -1,6 +1,14 @@
-use std::ffi::c_void;
-
-use nix::unistd::Pid;
+use crate::helper::DynError;
+use nix::{
+    libc::user_regs_struct,
+    sys::{
+        personality::{self, Persona},
+        ptrace,
+        wait::{waitpid, WaitStatus},
+    },
+    unistd::{execvp, fork, ForkResult, Pid},
+};
+use std::ffi::{c_void, CString};
 
 pub struct DbgInfo {
     pid: Pid,
@@ -47,7 +55,50 @@ impl<T> ZDbg<T> {
     }
 }
 
-impl ZDbg<NotRunning> {}
+impl ZDbg<NotRunning> {
+    pub fn new(filename: String) -> Self {
+        ZDbg {
+            info: Box::new(DbgInfo {
+                pid: Pid::from_raw(0),
+                brk_addr: None,
+                brk_val: 0,
+                filename,
+            }),
+            _state: NotRunning,
+        }
+    }
+
+    pub fn do_cmd(mut self, cmd: &[&str]) -> Result<State, DynError> {
+        if cmd.is_empty() {
+            return Ok(State::NotRunning(self));
+        }
+
+        match cmd[0] {
+            "run" | "r" => return self.do_run(cmd),
+            "break" | "b" => {
+                self.do_break(cmd);
+            }
+            "exit" => return Ok(State::Exit),
+            _ => self.do_cmd_common(cmd),
+        }
+
+        Ok(State::NotRunning(self))
+    }
+
+    fn do_break(&mut self, cmd: &[&str]) -> bool {
+        self.set_break_addr(cmd)
+    }
+
+    fn do_run(mut self, cmd: &[&str]) -> Result<State, DynError> {
+        let args: Vec<CString> = cmd.iter().map(|s| CString::new(*s).unwrap()).collect();
+
+        // match unsafe { fork()? } {
+        //     ForkResult::Child => {
+        //         let p = personality::get().unwrap();
+        //     }
+        // }
+    }
+}
 
 impl ZDbg<Running> {}
 
