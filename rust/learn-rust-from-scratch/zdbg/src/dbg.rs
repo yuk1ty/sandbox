@@ -92,15 +92,76 @@ impl ZDbg<NotRunning> {
     fn do_run(mut self, cmd: &[&str]) -> Result<State, DynError> {
         let args: Vec<CString> = cmd.iter().map(|s| CString::new(*s).unwrap()).collect();
 
-        // match unsafe { fork()? } {
-        //     ForkResult::Child => {
-        //         let p = personality::get().unwrap();
-        //     }
-        // }
+        match unsafe { fork()? } {
+            ForkResult::Child => {
+                let p = personality::get().unwrap();
+                personality::set(p | Persona::ADDR_NO_RANDOMIZE).unwrap();
+                ptrace::traceme().unwrap();
+                execvp(&CString::new(self.info.filename.as_str()).unwrap(), &args).unwrap();
+                unreachable!();
+            }
+            ForkResult::Parent { child, .. } => match waitpid(child, None)? {
+                WaitStatus::Stopped(..) => {
+                    println!("<<子プロセスの実行に成功しました : PID = {child} >>");
+                    self.info.pid = child;
+                    let mut dbg = ZDbg::<Running> {
+                        info: self.info,
+                        _state: Running,
+                    };
+                    dbg.set_break()?;
+                    dbg.do_continue()
+                }
+                WaitStatus::Exited(..) | WaitStatus::Signaled(..) => {
+                    Err("子プロセスの実行に失敗しました".into())
+                }
+                _ => Err("子プロセスが不正な状態です".into()),
+            },
+        }
     }
 }
 
-impl ZDbg<Running> {}
+impl ZDbg<Running> {
+    pub fn do_cmd(mut self, cmd: &[&str]) -> Result<State, DynError> {
+        if cmd.is_empty() {
+            return Ok(State::Running(self));
+        }
+
+        match cmd[0] {
+            "break" | "b" => return self.do_break(cmd)?,
+            "continue" | "c" => return self.do_continue(),
+            "registers" | "regs" => {
+                let regs = ptrace::getregs(self.info.pid)?;
+                print_regs(&args);
+            }
+            "setpi" | "s" => return self.do_setpi(),
+            "run" | "r" => eprintln!("<<すでに実行中です>>"),
+            "exit" => {
+                self.do_exit()?;
+                return Ok(State::Exit);
+            }
+            _ => self.do_cmd_common(cmd),
+        }
+
+        Ok(State::Running(self))
+    }
+
+    fn do_exit(self) -> Result<(), DynError> {
+        loop {
+            ptrace::kill(self.info.pid)?;
+            match waitpid(self.info.pid, None)? {
+                WaitStatus::Exited(..) | WaitStatus::Signaled(..) => return Ok(()),
+                _ => (),
+            }
+        }
+    }
+
+    fn do_break(&mut self, cmd: &[&str]) -> Result<(), DynError> {
+        if self.set_break_addr(cmd) {
+            self.set_break()?;
+        }
+        Ok(())
+    }
+}
 
 fn do_help() {
     println!(
