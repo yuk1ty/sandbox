@@ -8,6 +8,9 @@ edition.workspace = true
 [dependencies]
 actix-web.workspace = true
 async-trait.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+sqlx.workspace = true
 tokio.workspace = true
 shaku = "0.6.1"
 shaku_actix = "0.2.0"

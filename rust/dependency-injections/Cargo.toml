@@ -14,4 +14,7 @@ rust-version = "1.67.0"
 [workspace.dependencies]
 actix-web = "4.3.0"
 async-trait = "0.1.64"
+serde = "1.0.152"
+serde_derive = "1.0.152"
+sqlx = { version = "0.6", features = [ "runtime-tokio-rustls" ] }
 tokio = { version = "1.25.0", features = ["full"] }
