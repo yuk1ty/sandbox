@@ -21,6 +21,11 @@ Found 3 outliers among 100 measurements (3.00%)
 ## Environment Information
 
 ```
+$ cat /etc/issue
+Ubuntu 20.04.5 LTS \n \l
+```
+
+```
 $ lscpu
 Architecture:                    x86_64
 CPU op-mode(s):                  32-bit, 64-bit
