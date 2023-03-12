@@ -1,3 +1,5 @@
 vscode:
   extensions:
     - rust-lang.rust-analyzer
+    - rebornix.Ruby
+    - misogi.ruby-rubocop
