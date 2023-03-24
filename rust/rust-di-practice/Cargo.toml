@@ -1,8 +1,16 @@
-[package]
-name = "rust-di-practice"
+[workspace]
+members = [
+	"common",
+	"constructor-di",
+	"cake-pattern-di",
+	"shaku-di"
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.68.1"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace.dependencies]
+anyhow = "1"
+actix-web = "4"
