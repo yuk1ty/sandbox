@@ -1,0 +1,12 @@
+[package]
+name = "open-feature-tutorial"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.68.1"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.6.12"
+rust-sdk = { git = "https://github.com/open-feature/rust-sdk", branch = "main" }
+tokio = { version = "1.27.0", features = ["full"] }
