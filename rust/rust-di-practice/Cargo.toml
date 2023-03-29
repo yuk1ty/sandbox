@@ -3,7 +3,8 @@ members = [
 	"common",
 	"constructor-di",
 	"cake-pattern-di",
-	"shaku-di"
+	"shaku-di",
+	"reader-di"
 ]
 
 [workspace.package]
