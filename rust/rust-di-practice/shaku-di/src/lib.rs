@@ -52,7 +52,26 @@ impl UserService for UserServiceImpl {
 
 module! {
     pub AppModule {
-        components = [UserRepositoryImpl],
+        components = [UserServiceImpl, UserRepositoryImpl],
         providers = []
+    }
+}
+
+pub mod router {
+    use crate::{AppModule, UserService};
+    use actix_web::{get, web::Path, HttpResponse};
+    use shaku_actix::Inject;
+
+    #[get("/users/{id}")]
+    pub async fn find_user(
+        id: Path<String>,
+        service: Inject<AppModule, dyn UserService>,
+    ) -> HttpResponse {
+        let user = service.find_user(id.into_inner());
+        match user {
+            Ok(Some(user)) => HttpResponse::Ok().json(user),
+            Ok(None) => HttpResponse::NotFound().finish(),
+            Err(_) => HttpResponse::InternalServerError().finish(),
+        }
     }
 }

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 shaku = "0.6.1"
+shaku_actix = "0.2.0"
 common = { path = "../common" }
 anyhow.workspace = true
 actix-web.workspace = true
