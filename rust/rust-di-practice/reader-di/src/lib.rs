@@ -24,6 +24,15 @@ impl<'a, E: 'a + Clone, A: 'a> Reader<'a, E, A> {
         }
     }
 
+    pub fn local<F>(self, f: F) -> Reader<'a, E, A>
+    where
+        F: 'a + Fn(E) -> E,
+    {
+        Reader {
+            run: Box::new(move |env| (*self.run)(f(env))),
+        }
+    }
+
     // TODO not needed?
     pub fn run(&self, env: E) -> A {
         (self.run)(env)
@@ -35,6 +44,30 @@ fn test_reader_flat_map() {
     let reader1 = Reader::pure(|x: i32| x + 1);
     let reader2 = Reader::pure(|x: i32| x * 2);
     // TODO
+    let ans = reader1.local(|x| x * 2).run(1);
+    // let a = reader1.flat_map(|y| Reader::pure(move |_| y * 2)).run(1);
+    assert_eq!(ans, 4);
+}
+
+#[test]
+fn test_deactivate_user() {
+    fn find_user<'a>(id: String) -> Reader<'a, UserRepositoryImpl, Result<Option<User>>> {
+        Reader::pure(move |repository: UserRepositoryImpl| repository.find_user(id.clone()))
+    }
+
+    fn deactivate_user<'a>(id: String) -> Reader<'a, UserRepositoryImpl, Result<()>> {
+        find_user(id.clone()).flat_map(move |user| {
+            // TODO 中を関数にすればいけそうな気もする。
+            let user = user.unwrap().clone();
+            Reader::pure(move |repository: UserRepositoryImpl| {
+                if let Some(mut user) = user.clone() {
+                    user.effective = false;
+                    repository.update(user)?;
+                };
+                Ok(())
+            })
+        })
+    }
 }
 
 pub struct UserService {
@@ -66,6 +99,7 @@ pub trait UserRepository: Send + Sync + 'static {
     fn update(&self, user: User) -> Result<()>;
 }
 
+#[derive(Clone)]
 pub struct UserRepositoryImpl {}
 
 impl UserRepositoryImpl {
