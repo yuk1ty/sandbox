@@ -1,31 +1,14 @@
 use anyhow::Result;
 use common::User;
 
-pub trait UserRepository: Send + Sync + 'static {
+pub trait UsesUserRepository {
     fn find_user(&self, id: String) -> Result<Option<User>>;
     fn update(&self, user: User) -> Result<()>;
 }
 
-pub trait UsesUserRepository {
-    type UserRepository: UserRepository;
-    fn user_repository(&self) -> &Self::UserRepository;
-}
+pub trait UserRepository {}
 
-pub struct MixInUserRepository {
-    user_repository: UserRepositoryImpl,
-}
-
-impl UsesUserRepository for MixInUserRepository {
-    type UserRepository = UserRepositoryImpl;
-
-    fn user_repository(&self) -> &Self::UserRepository {
-        &self.user_repository
-    }
-}
-
-pub struct UserRepositoryImpl {}
-
-impl UserRepository for UserRepositoryImpl {
+impl<T: UserRepository> UsesUserRepository for T {
     fn find_user(&self, id: String) -> Result<Option<User>> {
         todo!()
     }
@@ -35,29 +18,48 @@ impl UserRepository for UserRepositoryImpl {
     }
 }
 
-pub trait UserService: UsesUserRepository {
+pub trait ProvidesUserRepository {
+    type T: UsesUserRepository;
+    fn user_repository(&self) -> &Self::T;
+}
+
+pub trait UsesUserService {
+    fn find_user(&self, id: String) -> Result<Option<User>>;
+    fn deactivate_user(&self, id: String) -> Result<()>;
+}
+
+pub trait UserService: ProvidesUserRepository {}
+
+impl<T: UserService> UsesUserService for T {
     fn find_user(&self, id: String) -> Result<Option<User>> {
-        self.user_repository().find_user(id)
+        todo!()
     }
 
     fn deactivate_user(&self, id: String) -> Result<()> {
-        let user = self.user_repository().find_user(id)?;
-        if let Some(mut user) = user {
-            user.effective = false;
-            self.user_repository().update(user)?;
-        };
-        Ok(())
+        todo!()
     }
 }
 
-impl<T: UsesUserRepository> UserService for T {}
+pub trait ProvidesUserService {
+    type T: UsesUserService;
+    fn user_service(&self) -> &Self::T;
+}
 
-pub struct UserServiceImpl {}
+pub struct MixInUserService {}
 
-impl UsesUserRepository for UserServiceImpl {
-    type UserRepository = UserRepositoryImpl;
+impl UserRepository for MixInUserService {}
+impl UserService for MixInUserService {}
 
-    fn user_repository(&self) -> &Self::UserRepository {
-        &self.user_repository()
+impl ProvidesUserRepository for MixInUserService {
+    type T = MixInUserService;
+    fn user_repository(&self) -> &Self::T {
+        self
+    }
+}
+
+impl ProvidesUserService for MixInUserService {
+    type T = MixInUserService;
+    fn user_service(&self) -> &Self::T {
+        self
     }
 }
