@@ -1,16 +1,41 @@
 use anyhow::Result;
 use common::User;
 
+pub trait UsesDatabase {
+    fn find_user(&self, id: String) -> Result<Option<User>>;
+    fn update(&self, user: User) -> Result<()>;
+}
+
+pub trait Database {}
+
+impl<T: Database> UsesDatabase for T {
+    fn find_user(&self, id: String) -> Result<Option<User>> {
+        Ok(Some(User {
+            id: "id-a".to_string(),
+            effective: true,
+        }))
+    }
+
+    fn update(&self, user: User) -> Result<()> {
+        todo!()
+    }
+}
+
+pub trait ProvidesDatabase {
+    type T: UsesDatabase;
+    fn database(&self) -> &Self::T;
+}
+
 pub trait UsesUserRepository {
     fn find_user(&self, id: String) -> Result<Option<User>>;
     fn update(&self, user: User) -> Result<()>;
 }
 
-pub trait UserRepository {}
+pub trait UserRepository: ProvidesDatabase {}
 
 impl<T: UserRepository> UsesUserRepository for T {
     fn find_user(&self, id: String) -> Result<Option<User>> {
-        todo!()
+        self.database().find_user(id)
     }
 
     fn update(&self, user: User) -> Result<()> {
@@ -32,7 +57,7 @@ pub trait UserService: ProvidesUserRepository {}
 
 impl<T: UserService> UsesUserService for T {
     fn find_user(&self, id: String) -> Result<Option<User>> {
-        todo!()
+        self.user_repository().find_user(id)
     }
 
     fn deactivate_user(&self, id: String) -> Result<()> {
@@ -45,21 +70,54 @@ pub trait ProvidesUserService {
     fn user_service(&self) -> &Self::T;
 }
 
-pub struct MixInUserService {}
+pub struct AppModule;
 
-impl UserRepository for MixInUserService {}
-impl UserService for MixInUserService {}
+impl AppModule {
+    pub fn new() -> Self {
+        Self
+    }
+}
 
-impl ProvidesUserRepository for MixInUserService {
-    type T = MixInUserService;
+impl Database for AppModule {}
+impl UserRepository for AppModule {}
+impl UserService for AppModule {}
+
+// TODO こういう奇妙な呼び出しがなぜか可能になる
+// app_module.user_service().user_repository();
+
+impl ProvidesDatabase for AppModule {
+    type T = Self;
+    fn database(&self) -> &Self::T {
+        self
+    }
+}
+
+impl ProvidesUserRepository for AppModule {
+    type T = Self;
     fn user_repository(&self) -> &Self::T {
         self
     }
 }
 
-impl ProvidesUserService for MixInUserService {
-    type T = MixInUserService;
+impl ProvidesUserService for AppModule {
+    type T = Self;
     fn user_service(&self) -> &Self::T {
         self
+    }
+}
+
+pub mod router {
+    use actix_web::{get, web::Data, web::Path, HttpResponse};
+
+    use crate::{ProvidesUserService, UsesUserService};
+
+    #[get("/users/{id}")]
+    pub async fn find_user(id: Path<String>, app_module: Data<crate::AppModule>) -> HttpResponse {
+        let user = app_module.user_service().find_user(id.into_inner());
+        match user {
+            Ok(Some(user)) => HttpResponse::Ok().json(user),
+            Ok(None) => HttpResponse::NotFound().finish(),
+            Err(_) => HttpResponse::InternalServerError().finish(),
+        }
     }
 }
