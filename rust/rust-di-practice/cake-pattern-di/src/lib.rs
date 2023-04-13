@@ -1,12 +1,12 @@
 use anyhow::Result;
 use common::User;
 
-pub trait UsesDatabase {
+pub trait UsesDatabase: Send + Sync + 'static {
     fn find_user(&self, id: String) -> Result<Option<User>>;
     fn update(&self, user: User) -> Result<()>;
 }
 
-pub trait Database {}
+pub trait Database: Send + Sync + 'static {}
 
 impl<T: Database> UsesDatabase for T {
     fn find_user(&self, id: String) -> Result<Option<User>> {
@@ -17,16 +17,16 @@ impl<T: Database> UsesDatabase for T {
     }
 
     fn update(&self, user: User) -> Result<()> {
-        todo!()
+        Ok(println!("updated user: {:?}", user))
     }
 }
 
-pub trait ProvidesDatabase {
+pub trait ProvidesDatabase: Send + Sync + 'static {
     type T: UsesDatabase;
     fn database(&self) -> &Self::T;
 }
 
-pub trait UsesUserRepository {
+pub trait UsesUserRepository: Send + Sync + 'static {
     fn find_user(&self, id: String) -> Result<Option<User>>;
     fn update(&self, user: User) -> Result<()>;
 }
@@ -39,16 +39,16 @@ impl<T: UserRepository> UsesUserRepository for T {
     }
 
     fn update(&self, user: User) -> Result<()> {
-        todo!()
+        self.database().update(user)
     }
 }
 
-pub trait ProvidesUserRepository {
+pub trait ProvidesUserRepository: Send + Sync + 'static {
     type T: UsesUserRepository;
     fn user_repository(&self) -> &Self::T;
 }
 
-pub trait UsesUserService {
+pub trait UsesUserService: Send + Sync + 'static {
     fn find_user(&self, id: String) -> Result<Option<User>>;
     fn deactivate_user(&self, id: String) -> Result<()>;
 }
@@ -61,11 +61,16 @@ impl<T: UserService> UsesUserService for T {
     }
 
     fn deactivate_user(&self, id: String) -> Result<()> {
-        todo!()
+        let user = self.user_repository().find_user(id)?;
+        if let Some(mut user) = user {
+            user.effective = false;
+            self.user_repository().update(user)?;
+        };
+        Ok(())
     }
 }
 
-pub trait ProvidesUserService {
+pub trait ProvidesUserService: Send + Sync + 'static {
     type T: UsesUserService;
     fn user_service(&self) -> &Self::T;
 }

@@ -4,6 +4,28 @@ use anyhow::Result;
 use common::User;
 use shaku::{module, Component, Interface};
 
+pub trait Database: Interface {
+    fn find_user(&self, id: String) -> Result<Option<User>>;
+    fn update(&self, user: User) -> Result<()>;
+}
+
+#[derive(Component)]
+#[shaku(interface = Database)]
+pub struct DatabaseImpl;
+
+impl Database for DatabaseImpl {
+    fn find_user(&self, id: String) -> Result<Option<User>> {
+        Ok(Some(User {
+            id: "id-a".to_string(),
+            effective: true,
+        }))
+    }
+
+    fn update(&self, user: User) -> Result<()> {
+        Ok(println!("updated_user: {:?}", user))
+    }
+}
+
 pub trait UserRepository: Interface {
     fn find_user(&self, id: String) -> Result<Option<User>>;
     fn update(&self, user: User) -> Result<()>;
@@ -11,15 +33,18 @@ pub trait UserRepository: Interface {
 
 #[derive(Component)]
 #[shaku(interface = UserRepository)]
-pub struct UserRepositoryImpl;
+pub struct UserRepositoryImpl {
+    #[shaku(inject)]
+    database: Arc<dyn Database>,
+}
 
 impl UserRepository for UserRepositoryImpl {
     fn find_user(&self, id: String) -> Result<Option<User>> {
-        todo!()
+        self.database.find_user(id)
     }
 
     fn update(&self, user: User) -> Result<()> {
-        todo!()
+        self.database.update(user)
     }
 }
 
@@ -52,7 +77,7 @@ impl UserService for UserServiceImpl {
 
 module! {
     pub AppModule {
-        components = [UserServiceImpl, UserRepositoryImpl],
+        components = [UserServiceImpl, UserRepositoryImpl, DatabaseImpl],
         providers = []
     }
 }
