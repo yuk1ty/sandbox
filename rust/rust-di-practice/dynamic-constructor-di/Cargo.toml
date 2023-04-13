@@ -1,14 +1,11 @@
 [package]
-name = "shaku-di"
-version = "0.1.0"
-edition = "2021"
-rust-version.workspace = true
+name = "dynamic-constructor-di"
+version.workspace = true
+edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-shaku = "0.6.1"
-shaku_actix = "0.2.0"
 common = { path = "../common" }
 anyhow.workspace = true
 actix-web.workspace = true
