@@ -32,20 +32,59 @@ pub trait UserRepository: Send + Sync + 'static {
     fn update(&self, user: User) -> Result<()>;
 }
 
-pub struct UserRepositoryImpl {}
+pub struct UserRepositoryImpl {
+    database: Database,
+}
 
 impl UserRepositoryImpl {
-    pub fn new() -> UserRepositoryImpl {
-        UserRepositoryImpl {}
+    pub fn new(database: Database) -> UserRepositoryImpl {
+        UserRepositoryImpl { database }
     }
 }
 
 impl UserRepository for UserRepositoryImpl {
     fn find_user(&self, id: String) -> Result<Option<User>> {
-        todo!()
+        self.database.find_user(id)
     }
 
     fn update(&self, user: User) -> Result<()> {
-        todo!()
+        let user = self.find_user(user.id)?;
+        if let Some(mut user) = user {
+            user.effective = false;
+            self.database.update(user)?;
+        };
+        Ok(())
+    }
+}
+
+pub struct Database;
+
+impl Database {
+    pub fn find_user(&self, id: String) -> Result<Option<User>> {
+        Ok(Some(User {
+            id: "id-a".to_string(),
+            effective: true,
+        }))
+    }
+
+    pub fn update(&self, user: User) -> Result<()> {
+        Ok(println!("updated user: {:?}", user))
+    }
+}
+
+pub struct AppModule {
+    user_service: UserService,
+}
+
+impl AppModule {
+    pub fn new() -> AppModule {
+        let database = Database;
+        let user_service = UserService::new(Arc::new(UserRepositoryImpl::new(database)));
+
+        AppModule { user_service }
+    }
+
+    pub fn user_service(&self) -> &UserService {
+        &self.user_service
     }
 }

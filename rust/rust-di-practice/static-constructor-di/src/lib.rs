@@ -71,21 +71,19 @@ impl Database {
 }
 
 pub struct AppModule {
-    static_user_service: UserService<UserRepositoryImpl>,
+    user_service: UserService<UserRepositoryImpl>,
 }
 
 impl AppModule {
     pub fn new() -> AppModule {
         let database = Database;
-        let static_user_service = UserService::new(UserRepositoryImpl::new(database));
+        let user_service = UserService::new(UserRepositoryImpl::new(database));
 
-        AppModule {
-            static_user_service,
-        }
+        AppModule { user_service }
     }
 
-    pub fn static_user_service(&self) -> &UserService<UserRepositoryImpl> {
-        &self.static_user_service
+    pub fn user_service(&self) -> &UserService<UserRepositoryImpl> {
+        &self.user_service
     }
 }
 
@@ -94,7 +92,7 @@ pub mod router {
 
     #[get("/users/{id}")]
     pub async fn find_user(id: Path<String>, app_module: Data<crate::AppModule>) -> HttpResponse {
-        let user = app_module.static_user_service.find_user(id.into_inner());
+        let user = app_module.user_service.find_user(id.into_inner());
         match user {
             Ok(Some(user)) => HttpResponse::Ok().json(user),
             Ok(None) => HttpResponse::NotFound().finish(),
