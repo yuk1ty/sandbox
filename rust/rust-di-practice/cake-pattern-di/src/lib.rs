@@ -83,32 +83,63 @@ impl AppModule {
     }
 }
 
-impl Database for AppModule {}
-impl UserRepository for AppModule {}
-impl UserService for AppModule {}
+// 本来は下記実装を用意する必要があるが、マクロによって置き換え済み。
 
-// TODO こういう奇妙な呼び出しがなぜか可能になる
-// app_module.user_service().user_repository();
+// impl Database for AppModule {}
+// impl UserRepository for AppModule {}
+// impl UserService for AppModule {}
 
-impl ProvidesDatabase for AppModule {
-    type T = Self;
-    fn database(&self) -> &Self::T {
-        self
-    }
+// impl ProvidesDatabase for AppModule {
+//     type T = Self;
+//     fn database(&self) -> &Self::T {
+//         self
+//     }
+// }
+
+// impl ProvidesUserRepository for AppModule {
+//     type T = Self;
+//     fn user_repository(&self) -> &Self::T {
+//         self
+//     }
+// }
+
+// impl ProvidesUserService for AppModule {
+//     type T = Self;
+//     fn user_service(&self) -> &Self::T {
+//         self
+//     }
+// }
+
+build_container!(Database, AppModule);
+build_container!(UserRepository, AppModule);
+build_container!(UserService, AppModule);
+
+provide!(ProvidesDatabase, database, AppModule);
+provide!(ProvidesUserRepository, user_repository, AppModule);
+provide!(ProvidesUserService, user_service, AppModule);
+
+#[macro_export]
+macro_rules! build_container {
+    // trait = どのトレイトを依存注入の対象とするか
+    // module = どのモジュールに紐付けするか
+    ($trait:ident, $module:ident) => {
+        impl $trait for $module {}
+    };
 }
 
-impl ProvidesUserRepository for AppModule {
-    type T = Self;
-    fn user_repository(&self) -> &Self::T {
-        self
-    }
-}
-
-impl ProvidesUserService for AppModule {
-    type T = Self;
-    fn user_service(&self) -> &Self::T {
-        self
-    }
+#[macro_export]
+macro_rules! provide {
+    // provider = 指定対象とする Provides トレイト
+    // accessor = なんというメソッドとして呼び出しできるようにするか
+    // module = どのモジュールに紐付けするか
+    ($provider:ident, $accessor:tt, $module:ident) => {
+        impl $provider for $module {
+            type T = Self;
+            fn $accessor(&self) -> &Self::T {
+                self
+            }
+        }
+    };
 }
 
 pub mod router {
@@ -124,5 +155,71 @@ pub mod router {
             Ok(None) => HttpResponse::NotFound().finish(),
             Err(_) => HttpResponse::InternalServerError().finish(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        Database, ProvidesDatabase, ProvidesUserRepository, ProvidesUserService, UserRepository,
+        UserService, UsesDatabase, UsesUserRepository,
+    };
+    use anyhow::Result;
+    use common::User;
+
+    fn call_mock_user_repository_via_user_service() {
+        // TODO たぶん別モジュールで定義させないとダメ。名前の衝突が起きてそう。
+        struct MockedModules;
+        struct MockDatabase;
+        impl UsesDatabase for MockDatabase {
+            fn find_user(&self, id: String) -> Result<Option<User>> {
+                println!("mocked find_user");
+                Ok(None)
+            }
+
+            fn update(&self, user: User) -> Result<()> {
+                Ok(println!("mocked update"))
+            }
+        }
+        // impl UsesUserRepository for MockUserRepository {
+        //     fn find_user(&self, id: String) -> Result<Option<User>> {
+        //         println!("mocked find_user");
+        //         Ok(None)
+        //     }
+
+        //     fn update(&self, user: User) -> Result<()> {
+        //         Ok(println!("mocked update"))
+        //     }
+        // }
+        impl Database for MockedModules {}
+        impl UserRepository for MockedModules {}
+        impl UserService for MockedModules {}
+        impl ProvidesDatabase for MockedModules {
+            type T = Self;
+            fn database(&self) -> &Self::T {
+                self
+            }
+        }
+        impl ProvidesUserRepository for MockedModules {
+            type T = Self;
+            fn user_repository(&self) -> &Self::T {
+                self
+            }
+        }
+        impl ProvidesUserService for MockedModules {
+            type T = Self;
+            fn user_service(&self) -> &Self::T {
+                self
+            }
+        }
+        let module = MockedModules {};
+        assert!(module.user_service().find_user("id".to_string()).is_ok());
+        assert!(module
+            .user_service()
+            .update(User {
+                id: "id".to_string(),
+                effective: true
+            })
+            .is_ok());
     }
 }
