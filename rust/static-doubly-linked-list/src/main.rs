@@ -6,6 +6,7 @@ pub type FullNode<'id, T> = StaticRc<GhostCell<'id, Node<'id, T>>, 2, 2>;
 pub type HalfLink<'id, T> = Option<HalfNode<'id, T>>;
 pub type FullLink<'id, T> = Option<HalfNode<'id, T>>;
 
+#[derive(Debug)]
 pub struct DoublyLinkedList<'id, T> {
     pub head: HalfLink<'id, T>,
     pub tail: HalfLink<'id, T>,
@@ -59,6 +60,7 @@ impl<'id, T> DoublyLinkedList<'id, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct Node<'id, T> {
     pub data: T,
     pub prev: HalfLink<'id, T>,
@@ -88,12 +90,17 @@ mod tests {
     fn add_sequential_numbers_to_existing_list_and_get_four_elements() {
         GhostToken::new(|mut token| {
             let mut list = DoublyLinkedList::new();
+            println!("1");
             list.push_front(1, &mut token);
             list.push_front(2, &mut token);
             list.push_front(3, &mut token);
             list.push_front(4, &mut token);
+            println!("2");
             assert_eq!(list.len, 4);
+            println!("3");
+            println!("{:?}", list);
         });
+        println!("4");
     }
 }
 
