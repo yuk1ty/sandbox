@@ -88,3 +88,17 @@ impl AppModule {
         &self.user_service
     }
 }
+
+pub mod router {
+    use actix_web::{get, web::Data, web::Path, HttpResponse};
+
+    #[get("/users/{id}")]
+    pub async fn find_user(id: Path<String>, app_module: Data<crate::AppModule>) -> HttpResponse {
+        let user = app_module.user_service.find_user(id.into_inner());
+        match user {
+            Ok(Some(user)) => HttpResponse::Ok().json(user),
+            Ok(None) => HttpResponse::NotFound().finish(),
+            Err(_) => HttpResponse::InternalServerError().finish(),
+        }
+    }
+}

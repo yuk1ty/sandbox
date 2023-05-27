@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"benchmark",
 	"common",
 	"dynamic-constructor-di",
 	"static-constructor-di",

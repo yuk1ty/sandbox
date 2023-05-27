@@ -1,0 +1,21 @@
+[package]
+name = "benchmark"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+criterion = "0.4.0"
+static-constructor-di = { path = "../static-constructor-di" }
+dynamic-constructor-di = { path = "../dynamic-constructor-di" }
+
+[[bench]]
+name = "static_vs_dynamic"
+path = "benchmarks/static_vs_dynamic.rs"
+harness = false
+
+[[bench]]
+name = "multiple_dispatch"
+path = "benchmarks/multiple_dispatch.rs"
+harness = false
