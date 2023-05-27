@@ -13,7 +13,9 @@ pub struct DoublyLinkedList<'id, T> {
     pub len: usize,
 }
 
-impl<'id, T> DoublyLinkedList<'id, T> {
+use std::fmt::Debug;
+
+impl<'id, T: Debug> DoublyLinkedList<'id, T> {
     pub fn new() -> Self {
         Self {
             head: None,
@@ -23,7 +25,7 @@ impl<'id, T> DoublyLinkedList<'id, T> {
     }
 
     pub fn push_front(&mut self, value: T, token: &mut GhostToken<'id>) {
-        let new_head = Node::new(value);
+        let new_head = StaticRc::new(GhostCell::new(Node::new(value)));
         let (itself, cloned) = StaticRc::split::<1, 1>(new_head);
         match self.head.take() {
             Some(old_head) => {
@@ -41,7 +43,7 @@ impl<'id, T> DoublyLinkedList<'id, T> {
     }
 
     pub fn push_back(&mut self, value: T, token: &mut GhostToken<'id>) {
-        let new_tail = Node::new(value);
+        let new_tail = StaticRc::new(GhostCell::new(Node::new(value)));
         let (itself, cloned) = StaticRc::split::<1, 1>(new_tail);
         match self.tail.take() {
             Some(old_tail) => {
@@ -89,22 +91,47 @@ pub struct Node<'id, T> {
 }
 
 impl<'id, T> Node<'id, T> {
-    pub fn new(value: T) -> FullNode<'id, T> {
+    pub fn new(value: T) -> Node<'id, T> {
         let base = Node {
             data: value,
             prev: None,
             next: None,
         };
-        let full_node = StaticRc::new(GhostCell::new(base));
-        full_node
+        base
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::DoublyLinkedList;
     use ghost_cell::GhostToken;
 
-    use crate::DoublyLinkedList;
+    #[test]
+    fn create_node() {
+        GhostToken::new(|mut token| {
+            let mut node = Node::new(1);
+            node.next = Some(StaticRc::new(GhostCell::new(Node::new(2))));
+        });
+    }
+
+    #[test]
+    fn empty_pop_back() {
+        GhostToken::new(|mut token| {
+            let mut list: DoublyLinkedList<i32> = DoublyLinkedList::new();
+            let pop_back = list.pop_back(&mut token);
+            assert_eq!(pop_back, None);
+        });
+    }
+
+    #[test]
+    fn push_back() {
+        GhostToken::new(|mut token| {
+            let mut list = DoublyLinkedList::new();
+            list.push_back(1, &mut token);
+            println!("{:?}", list);
+        });
+    }
 
     // TODO なんか落ちるw
     #[test]
