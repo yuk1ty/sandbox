@@ -108,23 +108,36 @@ pub struct UserService;
 
 impl UserService {
     pub fn find_user<'a>(&self, id: String) -> Reader<'a, Arc<AppModule>, Result<Option<User>>> {
-        ask().flat_map(move |module: Arc<AppModule>| module.user_repository.find_user(id.clone()))
+        // ask().flat_map(move |module: Arc<AppModule>| module.user_repository.find_user(id.clone()))
+        mdo! {
+            module <- ask::<Arc<AppModule>>();
+            ret module.user_repository.find_user(id.clone())
+        }
     }
 
     pub fn deactivate_user<'a>(&self, id: String) -> Reader<'a, Arc<AppModule>, Result<()>> {
-        ask()
-            .flat_map(move |module: Arc<AppModule>| module.user_repository.find_user(id.clone()))
-            .flat_map(|user| {
-                if let Ok(Some(user)) = user {
-                    ask().flat_map(move |module: Arc<AppModule>| {
-                        let mut user = user.clone();
-                        user.effective = false;
-                        module.user_repository.update(user)
-                    })
-                } else {
-                    Reader::pure(|_| Ok(()))
-                }
-            })
+        // ask()
+        //     .flat_map(move |module: Arc<AppModule>| module.user_repository.find_user(id.clone()))
+        //     .flat_map(|user| {
+        //         if let Ok(Some(user)) = user {
+        //             ask().flat_map(move |module: Arc<AppModule>| {
+        //                 let mut user = user.clone();
+        //                 user.effective = false;
+        //                 module.user_repository.update(user)
+        //             })
+        //         } else {
+        //             Reader::pure(|_| Ok(()))
+        //         }
+        //     })
+        mdo! {
+            module <- ask::<Arc<AppModule>>();
+            user <- module.user_repository.find_user(id.clone());
+            ret if let Ok(Some(user)) = user {
+                module.user_repository.update(user)
+            } else {
+                Reader::pure(|_| Ok(()))
+            }
+        }
     }
 }
 
@@ -187,6 +200,19 @@ impl AppModule {
             database,
         }
     }
+}
+
+#[macro_export]
+macro_rules! mdo {
+    ($i:ident <- $e:expr; $($rest:tt)*) => {
+        $e.flat_map(move |$i| mdo!($($rest)*))
+    };
+    (_ <- $e:expr; $($rest:tt)*) => {
+        $e.flat_map(move |_| mdo!($($rest)*))
+    };
+    (ret $e:expr) => {
+        $e
+    };
 }
 
 pub mod router {
