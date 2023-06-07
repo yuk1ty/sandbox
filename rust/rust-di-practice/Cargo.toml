@@ -3,6 +3,7 @@ members = [
 	"benchmark",
 	"common",
 	"dynamic-constructor-di",
+	"function-di",
 	"static-constructor-di",
 	"constructor-di",
 	"cake-pattern-di",
