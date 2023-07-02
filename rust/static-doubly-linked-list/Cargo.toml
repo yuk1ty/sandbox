@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 ghost-cell = { git = "https://github.com/yuk1ty/ghost-cell" }
 static-rc = { git = "https://github.com/yuk1ty/static-rc" }
+typed-arena = "2.0.2"
