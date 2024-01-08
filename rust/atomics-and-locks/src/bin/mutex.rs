@@ -3,6 +3,7 @@ use std::{
     cell::UnsafeCell,
     ops::{Deref, DerefMut},
     sync::atomic::{AtomicU32, Ordering},
+    time::Instant,
 };
 
 pub struct Mutex<T> {
@@ -21,6 +22,7 @@ impl<T> Mutex<T> {
         }
     }
 
+    #[inline]
     pub fn lock(&self) -> MutexGuard<T> {
         if self
             .state
@@ -33,6 +35,7 @@ impl<T> Mutex<T> {
     }
 }
 
+#[cold]
 fn lock_contended(state: &AtomicU32) {
     let mut spin_count = 0;
 
@@ -76,6 +79,7 @@ impl<T> DerefMut for MutexGuard<'_, T> {
 }
 
 impl<T> Drop for MutexGuard<'_, T> {
+    #[inline]
     fn drop(&mut self) {
         if self.mutex.state.swap(0, Ordering::Release) == 2 {
             wake_one(&self.mutex.state);
@@ -83,4 +87,13 @@ impl<T> Drop for MutexGuard<'_, T> {
     }
 }
 
-fn main() {}
+fn main() {
+    let m = Mutex::new(0);
+    std::hint::black_box(&m);
+    let start = Instant::now();
+    for _ in 0..5_000_000 {
+        *m.lock() += 1;
+    }
+    let duration = start.elapsed();
+    println!("locked {} times in {:?}", *m.lock(), duration);
+}
