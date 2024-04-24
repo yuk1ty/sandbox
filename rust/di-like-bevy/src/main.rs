@@ -99,6 +99,25 @@ impl_into_system!(T1, T2);
 impl_into_system!(T1, T2, T3);
 impl_into_system!(T1, T2, T3, T4);
 
+trait SystemParam<'a> {
+    fn retrieve(resources: &'a mut HashMap<TypeId, Box<dyn Any>>) -> Self;
+}
+
+struct Res<'a, T: 'static> {
+    value: &'a T,
+}
+
+impl<'a, T: 'static> SystemParam<'a> for Res<'a, T> {
+    fn retrieve(resources: &'a mut HashMap<TypeId, Box<dyn Any>>) -> Self {
+        let value = resources
+            .get_mut(&TypeId::of::<T>())
+            .unwrap()
+            .downcast_ref::<T>()
+            .unwrap();
+        Res { value }
+    }
+}
+
 fn main() {
     let mut scheduler = Scheduler {
         systems: Vec::new(),
