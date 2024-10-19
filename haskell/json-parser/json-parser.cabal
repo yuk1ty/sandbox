@@ -67,7 +67,7 @@ executable json-parser
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    bytestring, QuickCheck, base ^>=4.17.2.1
+    build-depends:    QuickCheck, base ^>=4.17.2.1
 
     -- Directories containing source files.
     hs-source-dirs:   app

@@ -7,7 +7,6 @@ module JSONParser where
 import Control.Applicative (Alternative (..), optional)
 import Control.Monad (replicateM)
 import Data.Bits (shiftL)
--- import Data.ByteString (concatMap, intercalate)
 import Data.Char (chr, digitToInt, isDigit, isHexDigit, isSpace, ord)
 import Data.Functor (($>))
 import Data.List (intercalate)
@@ -61,3 +60,11 @@ showJSONChar c = case c of
   where
     showJSONNonASCIIChar c =
       let a = "0000" ++ showHex (ord c) "" in drop (length a - 4) a
+
+-- Generators
+
+jNullGen :: Gen JValue
+jNullGen = pure JNull
+
+jBoolGen :: Gen JValue
+jBoolGen = JBool <$> arbitrary
