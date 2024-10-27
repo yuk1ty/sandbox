@@ -43,9 +43,8 @@ getStructureString struct =
   case struct of
     Structure str -> str
 
-append_ :: Structure -> Structure -> Structure
-append_ (Structure a) (Structure b) =
-  Structure (a <> b)
+instance Semigroup Structure where
+  (<>) a b = Structure (getStructureString a <> getStructureString b)
 
 render :: Html -> String
 render html =
