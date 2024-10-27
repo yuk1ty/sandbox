@@ -24,6 +24,7 @@ h1_ = Structure . el "h1" . escape
 
 ul_ :: [Structure] -> Structure
 ul_ =
+  -- equals to `Structure(el("ul", concatMap(el("li", getStructureString(arguments))))`?
   Structure . el "ul" . concatMap (el "li" . getStructureString)
 
 ol_ :: [Structure] -> Structure
