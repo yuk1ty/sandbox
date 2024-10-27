@@ -11,7 +11,7 @@ myhtml =
         (h1_ "Heading")
         ( append_
             (p_ "Paragraph #1")
-            (p_ "Paragraph #2")
+            (code_ "<html></html>")
         )
     )
 
