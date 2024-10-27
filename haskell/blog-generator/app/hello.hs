@@ -7,11 +7,7 @@ myhtml :: Html
 myhtml =
   html_
     "My title"
-    ( append_
-        (h1_ "Heading")
-        ( append_
-            (p_ "Paragraph #1")
-            (code_ "<html></html>")
-        )
+    ( h1_ "heading"
+        <> p_ "Paragraph #1"
+        <> code_ "<html></html>"
     )
-
