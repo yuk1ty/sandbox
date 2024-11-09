@@ -1,25 +1,41 @@
-import Convert (convert)
+import Convert (convert, convertDirectory, convertSingle)
 import qualified Html
 import qualified Markup
+import OptParse
 import System.Directory (doesFileExist)
-import System.Environment (getArgs)
+import System.Exit
+import System.IO
 
 main :: IO ()
-main =
-  getArgs >>= \args ->
-    case args of
-      [] -> do
-        content <- getContents
-        putStrLn (process "Empty Title" content)
-      [input, output] -> do
-        content <- readFile input
-        exists <- doesFileExist output
-        let writeResult = writeFile output (process input content)
-         in if exists
-              then whenIO confirm writeResult
-              else writeResult
-      _ ->
-        putStrLn "Usage: runghc Main.hs [-- <input-file> <output-file>]"
+main = do
+  options <- parse
+  case options of
+    ConvertDir input output ->
+      convertDirectory input output
+    ConvertSingle input output -> do
+      (title, inputHandle) <-
+        case input of
+          Stdin ->
+            pure ("", stdin)
+          InputFile file ->
+            (,) file <$> openFile file ReadMode
+      outputHandle <-
+        case output of
+          StdOut -> pure stdout
+          OutputFile file -> do
+            exists <- doesFileExist file
+            shouldOpenFile <-
+              if exists
+                then confirm
+                else pure True
+            if shouldOpenFile
+              then
+                openFile file WriteMode
+              else
+                exitFailure
+      convertSingle title inputHandle outputHandle
+      hClose inputHandle
+      hClose outputHandle
 
 process :: Html.Title -> String -> String
 process title = Html.render . convert title . Markup.parse
