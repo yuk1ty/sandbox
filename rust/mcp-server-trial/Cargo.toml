@@ -1,0 +1,11 @@
+[package]
+name = "mcp-server-trial"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+poem-mcpserver = "=0.1.8"
+schemars = "=0.8.22"
+serde = { version = "=1.0.219", features = ["derive"] }
+tokio = { version = "=1.44.1", features = ["macros", "rt-multi-thread"] }
+uuid = { version = "=1.16.0", features = ["v4"] }
