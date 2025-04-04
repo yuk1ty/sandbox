@@ -1,4 +1,4 @@
-use poem_mcpserver::{McpServer, Tools, tool::Text};
+use poem_mcpserver::{McpServer, Tools, stdio::stdio, tool::Text};
 use uuid::Uuid;
 
 struct UuidGenerator;
@@ -12,5 +12,5 @@ impl UuidGenerator {
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    poem_mcpserver::stdio::stdio(McpServer::new().tools(UuidGenerator)).await
+    stdio(McpServer::new().tools(UuidGenerator)).await
 }
