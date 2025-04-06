@@ -5,7 +5,7 @@ struct UuidGenerator;
 
 #[Tools]
 impl UuidGenerator {
-    async fn generate(&self) -> Text<String> {
+    async fn generate_v4(&self) -> Text<String> {
         Text(Uuid::new_v4().to_string())
     }
 }
