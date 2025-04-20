@@ -1,9 +1,5 @@
-use tokio::io::AsyncBufReadExt;
-use tokio::io::AsyncWriteExt;
-use tokio::io::BufReader;
-use tokio::io::BufWriter;
-use tokio::net::TcpListener;
-use tokio::net::TcpStream;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
+use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]
 async fn main() {
