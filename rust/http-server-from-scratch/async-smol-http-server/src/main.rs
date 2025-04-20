@@ -15,7 +15,7 @@ fn main() {
 }
 
 async fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(stream.clone());
+    let buf_reader = BufReader::new(&mut stream);
 
     let mut req = vec![];
     let mut lines = buf_reader.lines();

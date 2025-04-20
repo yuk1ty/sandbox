@@ -1,4 +1,4 @@
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]
@@ -10,12 +10,10 @@ async fn main() {
     }
 }
 
-async fn handle_connection(stream: TcpStream) {
-    let (reader, writer) = stream.into_split();
-    let buf_reader = BufReader::new(reader);
-    let mut buf_writer = BufWriter::new(writer);
+async fn handle_connection(mut stream: TcpStream) {
+    let buf_reader = BufReader::new(&mut stream);
 
-    let mut req: Vec<String> = vec![];
+    let mut req = vec![];
     let mut lines = buf_reader.lines();
     while let Some(line) = lines.next_line().await.unwrap() {
         if line.is_empty() {
@@ -25,6 +23,6 @@ async fn handle_connection(stream: TcpStream) {
     }
 
     let res = format!("HTTP/1.1 200 OK\r\n\r\n{:#?}", req);
-    buf_writer.write_all(res.as_bytes()).await.unwrap();
-    buf_writer.flush().await.unwrap();
+    stream.write_all(res.as_bytes()).await.unwrap();
+    stream.flush().await.unwrap();
 }

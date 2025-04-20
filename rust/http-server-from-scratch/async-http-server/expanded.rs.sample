@@ -1,0 +1,47 @@
+#![feature(prelude_import)]
+#[prelude_import]
+use std::prelude::rust_2024::*;
+#[macro_use]
+extern crate std;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{TcpListener, TcpStream};
+fn main() {
+    let body = async {
+        let listener = TcpListener::bind("127.0.0.1:9999").await.unwrap();
+        loop {
+            let (stream, _) = listener.accept().await.unwrap();
+            handle_connection(stream).await;
+        }
+    };
+    #[allow(
+        clippy::expect_used,
+        clippy::diverging_sub_expression,
+        clippy::needless_return
+    )]
+    {
+        return tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Failed building the Runtime")
+            .block_on(body);
+    }
+}
+async fn handle_connection(mut stream: TcpStream) {
+    let buf_reader = BufReader::new(&mut stream);
+    let mut req = ::alloc::vec::Vec::new();
+    let mut lines = buf_reader.lines();
+    while let Some(line) = lines.next_line().await.unwrap() {
+        if line.is_empty() {
+            break;
+        }
+        req.push(line);
+    }
+    let res = ::alloc::__export::must_use({
+        let res = ::alloc::fmt::format(
+            format_args!("HTTP/1.1 200 OK\r\n\r\n{0:#?}", req),
+        );
+        res
+    });
+    stream.write_all(res.as_bytes()).await.unwrap();
+    stream.flush().await.unwrap();
+}
