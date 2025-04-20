@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["sync-http-server", "async-http-server"]
+members = ["sync-http-server", "async-http-server", "async-smol-http-server"]
