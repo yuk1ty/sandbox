@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 smol = "2.0.2"
+smol-macros = "0.1.1"

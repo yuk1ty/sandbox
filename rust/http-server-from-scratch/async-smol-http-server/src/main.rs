@@ -3,15 +3,16 @@ use smol::{
     net::{TcpListener, TcpStream},
     stream::StreamExt,
 };
+use smol_macros::main;
 
-fn main() {
-    smol::block_on(async {
+main! {
+    async fn main() {
         let listener = TcpListener::bind("127.0.0.1:9999").await.unwrap();
         loop {
             let (stream, _) = listener.accept().await.unwrap();
             handle_connection(stream).await;
         }
-    })
+    }
 }
 
 async fn handle_connection(mut stream: TcpStream) {
