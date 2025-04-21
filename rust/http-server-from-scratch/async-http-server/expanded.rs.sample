@@ -19,7 +19,7 @@ fn main() {
         clippy::needless_return
     )]
     {
-        return tokio::runtime::Builder::new_multi_thread()
+        return tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .expect("Failed building the Runtime")
